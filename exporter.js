@@ -24,6 +24,7 @@ const pm2c = (cmd, args = []) => new Promise((resolve, reject) => {
   });
 });
 
+const begin = new Date();
 const metrics = () => {
   const pm = {};
   const registry = new prom.Registry();
@@ -80,6 +81,10 @@ const metrics = () => {
             }
 
             const metricName = `${prefix}_${name.replace(/[^a-z\d]+/gi, '_').toLowerCase()}`;
+            // pm2_event_loop_latency_p95 는 첫 45초간은 사용하지 않는다. 초반 앱 실행하면서 튄 수치가 반영되기 때문이다. 45초는 임의로 정한 수치이다.
+            if (metricName === 'pm2_event_loop_latency_p95' && (Date.now() - begin.getTime()) / 1000 <= 45) {
+              value = 0;
+            }
 
             if (!pm[metricName]) {
               pm[metricName] = new prom.Gauge({
